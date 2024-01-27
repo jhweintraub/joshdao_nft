@@ -69,15 +69,50 @@ contract nftTests is Test {
     }
 
     function testBatchMint() public {
-        address[] memory users = address[](2);
+        address[] memory users = new address[](2);
         users[0] = alice;
         users[1] = bob;
 
-        bool[] memory designations = address[](2);
+        bool[] memory designations = new bool[](2);
         designations[0] = true;
         designations[1] = true;
 
+        uint[] memory tokenIds = new uint[](2);
+        tokenIds[0] = 0;
+        tokenIds[1] = 1;
+
+        string[] memory identifiers = new string[](2);
+        identifiers[0] = "test";
+        identifiers[1] = "testing";
+
         startHoax(multisig, multisig);
-        verifier.batchModifyVerified()
+        verifier.batchModifyVerified(users, designations);
+
+        nft.batchMint(users, tokenIds, identifiers);
+        assertEq(nft.ownerOf(0), alice, "tokenId 0 owner should be alice");
+        assertEq(nft.ownerOf(1), bob, "tokenId 1 owner should be bob");
     }
+
+    function testGMJMint() public {
+        uint256 tokenId = 0;
+
+        startHoax(multisig, multisig);
+        verifier.addVerified(alice);
+        nft.mint(alice, tokenId, "HI");
+
+        uint daysElapsed = 7;
+        skip(1 weeks);
+        
+        changePrank(alice, alice);
+        nft.claimGMJ(tokenId);
+
+        uint fee = (daysElapsed * 1e18) * nft.FEE() / nft.DENOM();
+        uint amountAfterFee = (daysElapsed * 1e18) - fee;
+
+        assertEq(gmj.balanceOf(alice), amountAfterFee, "Alice amount after fee incorrect");
+        assertEq(gmj.balanceOf(multisig), fee, "fee recipient balance incorrect");
+        assertEq(gmj.totalSupply(), amountAfterFee + fee, "total supply of GMJ Incorrect");
+    }
+
+
 }

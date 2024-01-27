@@ -8,6 +8,8 @@ import {GMJToken} from "./GMJToken.sol";
 
 import {ERC5192} from "./ERC5192.sol";
 
+import { console2 as console } from "forge-std/console2.sol";
+
 contract JoshDAONFT is ERC721, Ownable, ERC5192 {
     mapping(uint256 => uint256) public mintingTime;
     mapping(uint256 => string) public identifier;
@@ -60,7 +62,7 @@ contract JoshDAONFT is ERC721, Ownable, ERC5192 {
         onlyOwner
     {
         require(recipients.length == tokenIds.length && tokenIds.length == _identifiers.length, "Arrays not same length");
-        for (uint256 x = 0; x < recipients.length;) {
+        for (uint256 x = 0; x < recipients.length; x++) {
             mint(recipients[x], tokenIds[x], _identifiers[x]);
         }
     }
@@ -126,9 +128,9 @@ contract JoshDAONFT is ERC721, Ownable, ERC5192 {
         emit epochLengthModified(oldEpochLength, _epochLength);
     }
 
-    function mintGMJ(uint256 tokenId) external {
+    function claimGMJ(uint256 tokenId) external {
         //Restrict minting to once a week maximum
-        require(block.timestamp - lastClaimTime[tokenId] > minimumClaimDelay, "CANNOT_MINT_YET");
+        require(block.timestamp - lastClaimTime[tokenId] >=  minimumClaimDelay, "CANNOT_MINT_YET");
 
         address nftOwner = ownerOf(tokenId);
         //Number of Days that has passed since last mint
