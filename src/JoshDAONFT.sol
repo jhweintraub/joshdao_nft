@@ -22,7 +22,7 @@ contract JoshDAONFT is ERC721, Ownable, ERC5192 {
     uint256 public FEE = 50;
     uint256 public constant DENOM = 1000;
 
-    uint256 minimumClaimDelay;
+    uint256 public minimumClaimDelay;
     uint256 public epochLength;
 
     event verifierMigration(address indexed oldVerifier, address indexed newVerifier);
@@ -45,7 +45,8 @@ contract JoshDAONFT is ERC721, Ownable, ERC5192 {
 
     //To turn it into a soulbound NFT just remove transfer ability
     function transferFrom(address from, address to, uint256 id) public override {
-        require(!locked[id] && JoshVerifier(verifier).isVerified(to), "SOULBOUND NFT CANNOT BE TRANSFERED");
+        require(!locked[id], "LOCKED SOULBOUND NFT CANNOT BE TRANSFERED");
+        require(JoshVerifier(verifier).isVerified(to), "RECIPIENT_NOT_VERIFIED");
         super.transferFrom(from, to, id);
     }
 
@@ -53,6 +54,10 @@ contract JoshDAONFT is ERC721, Ownable, ERC5192 {
     function burn(uint256 id) public {
         require(ownerOf(id) == msg.sender, "NOT_OWNER");
         _burn(id);
+
+        delete mintingTime[id];
+        delete lastClaimTime[id];
+        delete identifier[id];
 
         emit Unlocked(id);
     }
@@ -69,7 +74,7 @@ contract JoshDAONFT is ERC721, Ownable, ERC5192 {
 
     //Mint function with identifier
     function mint(address to, uint256 tokenId, string memory _identifier) public onlyOwner {
-        require(JoshVerifier(verifier).isVerified(to), "NOT_VERIFIED");
+        require(JoshVerifier(verifier).isVerified(to), "RECIPIENT_NOT_VERIFIED");
         _mint(to, tokenId);
         mintingTime[tokenId] = block.timestamp;
         lastClaimTime[tokenId] = block.timestamp;
